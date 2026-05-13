@@ -1,5 +1,8 @@
 #pragma once
 #include <string>
+
+class Solver;
+
 std::string remove_espacos(const std::string &s);
 std::string remove_aspas(const std::string &s);
 int parseRanges(std::string inputFile,Solver &solver);

@@ -3,6 +3,7 @@
  * @brief recieves input from command line and reads the contents of the input file
  */
 #include "../include/cli_parser.hpp"
+#include "../include/solver.hpp"
 
 #include <iostream>
 #include <cstring>
