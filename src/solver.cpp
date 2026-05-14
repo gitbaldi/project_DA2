@@ -8,17 +8,27 @@ Solver::Solver() {
 }
 
 // cli_parser functions
-void Solver::addLiveRangeStart(std::string varName, int line) { /* Por fazer */ }
-void Solver::addLiveRangeEnd(std::string varName, int line) { /* Por fazer */ }
-void Solver::addLiveRangePoint(std::string varName, int line) { /* Por fazer */ }
+void Solver::addLiveRangeStart(std::string varName, int line) {
+    std::cout << "-> Start lido: variável '" << varName << "' na linha " << line << std::endl;
+}
+
+void Solver::addLiveRangeEnd(std::string varName, int line) {
+    std::cout << "-> End lido: variável '" << varName << "' na linha " << line << std::endl;
+}
+
+void Solver::addLiveRangePoint(std::string varName, int line) {
+    std::cout << "-> Ponto lido: variável '" << varName << "' na linha " << line << std::endl;
+}
 
 void Solver::setNumRegisters(int n) {
     numRegisters = n;
+    std::cout << "-> Número de registos (N) lido: " << n << std::endl;
 }
 
 void Solver::setAlgorithm(std::string alg, int param) {
     algorithm = alg;
     kParam = param;
+    std::cout << "-> Algoritmo lido: " << alg << " com parâmetro " << param << std::endl;
 }
 
 void Solver::updateOutputFile(std::string path) {

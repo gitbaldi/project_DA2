@@ -1,0 +1,19 @@
+# Compilados e Executáveis
+main
+*.o
+*.out
+*.exe
+
+# Pastas de Build (se usares CMake ou IDEs)
+build/
+.vscode/
+../.idea/
+cmake-build-debug/
+
+# Ficheiros de sistema
+.DS_Store
+Thumbs.db
+
+# Ficheiros de output gerados pelo teu programa
+allocation*.txt
+out.txt
