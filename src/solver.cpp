@@ -9,26 +9,30 @@ Solver::Solver() {
 
 // cli_parser functions
 void Solver::addLiveRangeStart(std::string varName, int line) {
-    std::cout << "-> Start lido: variável '" << varName << "' na linha " << line << std::endl;
-}
-
-void Solver::addLiveRangeEnd(std::string varName, int line) {
-    std::cout << "-> End lido: variável '" << varName << "' na linha " << line << std::endl;
+    Web newWeb;
+    newWeb.id = nextWebId++;
+    newWeb.varName = varName;
+    newWeb.lines.insert(line);
+    allWebs.push_back(newWeb);
 }
 
 void Solver::addLiveRangePoint(std::string varName, int line) {
-    std::cout << "-> Ponto lido: variável '" << varName << "' na linha " << line << std::endl;
+    if (!allWebs.empty()) allWebs.back().lines.insert(line);
+}
+
+void Solver::addLiveRangeEnd(std::string varName, int line) {
+    if (!allWebs.empty()) allWebs.back().lines.insert(line);
 }
 
 void Solver::setNumRegisters(int n) {
     numRegisters = n;
-    std::cout << "-> Número de registos (N) lido: " << n << std::endl;
+    std::cout << "-> number of registers read (N): " << n << std::endl;
 }
 
 void Solver::setAlgorithm(std::string alg, int param) {
     algorithm = alg;
     kParam = param;
-    std::cout << "-> Algoritmo lido: " << alg << " com parâmetro " << param << std::endl;
+    std::cout << "-> algorithm read: " << alg << " with parameter " << param << std::endl;
 }
 
 void Solver::updateOutputFile(std::string path) {
@@ -41,7 +45,17 @@ void Solver::generateOutput() {
 
 // main functions
 void Solver::buildInterferenceGraph() {
-    // graph with webs
+    std::cout << "building graph" << std::endl;
+    std::cout << "total webs read: " << allWebs.size() << std::endl;
+
+    for (const auto& w : allWebs) {
+        std::cout << "web id " << w.id << " (" << w.varName
+                  << ") active in lines: ";
+        for (int l : w.lines) std::cout << l << " ";
+        std::cout << std::endl;
+    }
+
+    // create edges in the graph if two webs share the same line
 }
 
 void Solver::applySpilling(int k) {

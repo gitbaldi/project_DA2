@@ -171,7 +171,9 @@ int parseArguments(int argc, char *argv[], Solver &solver) {
     //⚠️AQUI VOU CHAMAR AS FUNCOES QUE FAZEM ALGUMA COISA!!!
     // DO PROJ ANTERIOR
     //solver.computeAssignment();
-    solver.allocateRegisters(); // dps ver c eles (execucao principal)
+    // dps ver c eles (execucao principal)
+    //solver.allocateRegisters();
+    //coloquei a chamada na main
     solver.generateOutput(); //not sure
 
     return 0;
