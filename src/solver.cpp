@@ -43,7 +43,11 @@ void Solver::generateOutput() {
     std::cout << "generating output file: " << outputFile << std::endl;
 }
 
-// main functions
+/**
+ * @details Clears any existing graph data from previous runs to avoid pollution,
+ * inserts a vertex for every existing web, and uses a nested loop combination to
+ * detect overlapping line sets between distinct webs.
+ */
 void Solver::buildInterferenceGraph() {
     std::cout << "building interference graph" << std::endl;
     interferenceGraph = Graph<int>();
@@ -76,6 +80,11 @@ void Solver::buildInterferenceGraph() {
     }
 }
 
+/**
+ * @details Iterates a maximum of K times. In each step, it filters out already spilled
+ * webs, finds the one currently causing the most interference in the graph, and marks it
+ * for memory storage. By removing it from the graph, the degrees of all adjacent nodes drop.
+ */
 void Solver::applySpilling(int k) {
     std::cout << "executing web spilling (max k = " << k << ")" << std::endl;
 
@@ -115,6 +124,12 @@ void Solver::applySpilling(int k) {
     }
 }
 
+/**
+ * @details Implements a passive splitting strategy. It targets the web with the maximum
+ * number of conflicts, ensuring it has a splitable size (>= 2 lines). The live range is
+ * bisected, a new Web object is pushed to the collection with an appended '_split' suffix,
+ * and a full graph reconstruction is triggered to adjust to the new topology.
+ */
 void Solver::applySplitting(int k) {
     std::cout << "executing web splitting (max k = " << k << ")" << std::endl;
 
