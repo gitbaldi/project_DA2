@@ -2,6 +2,7 @@
 #define SOLVER_H
 
 #pragma once
+#include "../data_structures/Graph.h"
 #include <string>
 #include <vector>
 #include <set>
@@ -21,6 +22,7 @@ private:
     std::string outputFile;
     std::vector<Web> allWebs;
     int nextWebId = 0;
+    Graph<int> interferenceGraph;
 
 public:
     Solver(); // constructor

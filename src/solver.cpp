@@ -45,22 +45,74 @@ void Solver::generateOutput() {
 
 // main functions
 void Solver::buildInterferenceGraph() {
-    std::cout << "building graph" << std::endl;
-    std::cout << "total webs read: " << allWebs.size() << std::endl;
+    std::cout << "building interference graph" << std::endl;
+    interferenceGraph = Graph<int>();
 
+    // add webs
     for (const auto& w : allWebs) {
-        std::cout << "web id " << w.id << " (" << w.varName
-                  << ") active in lines: ";
-        for (int l : w.lines) std::cout << l << " ";
-        std::cout << std::endl;
+        interferenceGraph.addVertex(w.id);
     }
 
-    // create edges in the graph if two webs share the same line
+    // add edges
+    for (size_t i = 0; i < allWebs.size(); ++i) {
+        for (size_t j = i + 1; j < allWebs.size(); ++j) {
+            bool interfere = false;
+
+            // verify if webs share a line
+            for (int lineA : allWebs[i].lines) {
+                if (allWebs[j].lines.count(lineA)) {
+                    interfere = true;
+                    break;
+                }
+            }
+
+            // create edge
+            if (interfere) {
+                std::cout << "conflict detected: web " << allWebs[i].id
+                          << " <-> web " << allWebs[j].id << std::endl;
+                interferenceGraph.addBidirectionalEdge(allWebs[i].id, allWebs[j].id, 0);
+            }
+        }
+    }
 }
 
 void Solver::applySpilling(int k) {
-    std::cout << "executing spilling with K = " << k << std::endl;
-    // web spilling
+    std::cout << "executing web spilling (max k = " << k << ")" << std::endl;
+
+    // repeat process k times or until graph is empty
+    for (int i = 0; i < k; ++i) {
+        int maxDegree = -1;
+        int webIdToSpill = -1;
+
+        // fing web with most edges
+        for (auto &web : allWebs) {
+            if (web.reg == -2) continue; // ignore if web is spilling was already applied
+
+            auto v = interferenceGraph.findVertex(web.id);
+            if (v != nullptr) {
+                int degree = v->getAdj().size();
+                if (degree > maxDegree) {
+                    maxDegree = degree;
+                    webIdToSpill = web.id;
+                }
+            }
+        }
+
+        // spill the web found
+        if (webIdToSpill != -1 && maxDegree > 0) {
+            std::cout << "[Spill] web " << webIdToSpill << " chosen (grau " << maxDegree << ")" << std::endl;
+
+            // mark in list
+            for(auto &w : allWebs) {
+                if(w.id == webIdToSpill) w.reg = -2;
+            }
+
+            // remove web from graph
+            interferenceGraph.removeVertex(webIdToSpill);
+        } else {
+            break;
+        }
+    }
 }
 
 void Solver::applySplitting(int k) {
