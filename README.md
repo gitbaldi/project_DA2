@@ -5,7 +5,6 @@ This project implements a compiler register allocation tool designed to operate 
 
 The tool achieves this by translating variable live ranges into structural "webs", constructing an interference graph, and applying graph coloring heuristics to find an optimal assignment within a constrained number of physical registers.
 
----
 
 ## Features and Heuristics
 When the number of webs exceeds the available physical registers (causing register pressure), the application applies specific fallback optimization heuristics to find an acceptable solution:
@@ -16,7 +15,6 @@ When the number of webs exceeds the available physical registers (causing regist
 * **Web Spilling**: Run for up to $K$ iterations. Identifies the web with the highest interference degree, marks it to be spilled into memory (assigned to a placeholder register state `-2`), and removes it from the graph to alleviate pressure for other variables.
 * **Web Splitting**: Run for up to $K$ iterations. Finds the web with the highest degree spanning multiple code lines and splits its set of active lines in half. This creates two distinct sub-webs, significantly reducing interference and making the graph easier to color.
 
----
 
 ## File Structure
 The project repository contains the following core components:
@@ -27,7 +25,6 @@ The project repository contains the following core components:
 * **`Graph.h`**: A generic, highly adaptive template graph data structure utilized to represent and manipulate the interference graph.
 * **`MutablePriorityQueue.h`**: An optimized priority queue implementation helpful for efficiently extracting elements with extreme weight or node degrees.
 
----
 
 ## Input Specifications
 
