@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <unordered_map>
+
 
 struct Web {
     int id;
@@ -21,8 +23,10 @@ private:
     int numRegisters;
     std::string outputFile;
     std::vector<Web> allWebs;
-    int nextWebId = 0;
+    std::unordered_map<std::string, int> varToWebId;
     Graph<int> interferenceGraph;
+
+
 
 public:
     Solver(); // constructor
@@ -32,12 +36,22 @@ public:
     void addLiveRangeEnd(std::string varName, int line);
     void addLiveRangePoint(std::string varName, int line);
 
+private:
+    int getOrCreateWebId(const std::string &varName);
+
+public:
+
+
     void setNumRegisters(int n);
     void setAlgorithm(std::string alg, int param);
 
     void updateOutputFile(std::string path);
     void allocateRegisters();
     void generateOutput();
+
+    // register assignment result bookkeeping
+    void assignRegistersOrSpill();
+
 
     // algorithm functions
     void buildInterferenceGraph();
