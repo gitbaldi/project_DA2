@@ -149,61 +149,10 @@ void Solver::updateOutputFile(std::string path) {
  * @note This is a simplified allocator; it does not perform optimal coloring or
  *       priority-based spilling heuristics.
  */
-void Solver::assignRegistersOrSpill() {
-    // NOTE: this project currently only implements spilling selection skeleton,
-    // and the actual register assignment is done here using a simple greedy pass.
-    // Webs that were marked with reg == -2 are considered spilled (memory).
+// (assignRegistersOrSpill removed: register assignment is handled by tryColoring())
 
-    // reset any previous coloring markers (except -2)
-    for (auto &w : allWebs) {
-        if (w.reg != -2) w.reg = -1;
-    }
 
-    // greedy coloring: assign the lowest available register that doesn't conflict
-    // with already-assigned neighbors.
-    int nextReg = 0;
-    for (auto &w : allWebs) {
-        if (w.reg == -2) continue; // already memory
 
-        // collect used registers by neighbors
-        std::vector<bool> used(numRegisters, false);
-        for (auto *v : interferenceGraph.getVertexSet()) {
-            (void)v;
-        }
-
-        auto *wv = interferenceGraph.findVertex(w.id);
-        if (!wv) {
-            // isolated web, assign it
-            if (nextReg < numRegisters) w.reg = nextReg++;
-            else w.reg = -2;
-            continue;
-        }
-
-        for (auto *adjEdge : wv->getAdj()) {
-            int neighId = adjEdge->getDest()->getInfo();
-            for (auto &u : allWebs) {
-                if (u.id == neighId && u.reg >= 0 && u.reg < numRegisters) {
-                    used[u.reg] = true;
-                }
-            }
-        }
-
-        int chosen = -1;
-        for (int r = 0; r < numRegisters; ++r) {
-            if (!used[r]) {
-                chosen = r;
-                break;
-            }
-        }
-
-        if (chosen == -1) {
-            w.reg = -2; // spill
-        } else {
-            w.reg = chosen;
-            nextReg = std::max(nextReg, chosen + 1);
-        }
-    }
-}
 
 /**
  * @brief Generates the final register allocation output file.
@@ -277,17 +226,15 @@ void Solver::generateOutput() {
         return;
     }
 
-    assignRegistersOrSpill();
-
     // count used registers (web.reg >= 0)
     int usedRegs = 0;
     for (const auto &w : allWebs) {
         if (w.reg >= 0) usedRegs = std::max(usedRegs, w.reg + 1);
     }
 
-    // If some web couldn't be assigned and became spill, that's allowed.
-    // But if usedRegs exceeds numRegisters (shouldn't with our greedy), clamp.
+    // Clamp to available registers.
     usedRegs = std::min(usedRegs, numRegisters);
+
 
     out << "webs: " << allWebs.size() << "\n";
     for (const auto &w : allWebs) {
@@ -507,9 +454,99 @@ void Solver::applySplitting(int k) {
 }
 
 bool Solver::tryColoring() {
-    // graph coloring
+    // Real graph traversal + register assignment.
+    // Convention:
+    //   web.reg >= 0  => assigned physical register
+    //   web.reg == -1  => unassigned (should not persist at the end)
+    //   web.reg == -2  => spilled to memory
+
+    // Reset to unassigned, keeping already-spilled webs as memory.
+    for (std::size_t i = 0; i < allWebs.size(); ++i) {
+        if (allWebs[i].reg != -2) allWebs[i].reg = -1;
+    }
+
+
+    // If no registers exist, assignment is impossible => everything goes to memory.
+    if (numRegisters <= 0) {
+        for (auto &w : allWebs) w.reg = -2;
+        return false;
+    }
+
+    // Greedy traversal order: descending degree to make allocation harder first.
+    // (Still a heuristic; the required correctness condition is the failure => all memory.)
+    std::vector<int> order;
+    order.reserve(allWebs.size());
+    for (auto &w : allWebs) {
+        if (w.reg == -2) continue; // already spilled
+        order.push_back(w.id);
+    }
+
+    auto degreeOf = [&](int webId) -> int {
+        auto *v = interferenceGraph.findVertex(webId);
+        if (!v) return 0;
+        return static_cast<int>(v->getAdj().size());
+    };
+
+    std::sort(order.begin(), order.end(), [&](int a, int b) {
+        return degreeOf(a) > degreeOf(b);
+    });
+
+    auto findWebById = [&](int webId) -> Web* {
+
+        for (std::size_t idx = 0; idx < allWebs.size(); ++idx) {
+            if (allWebs[idx].id == webId) return &allWebs[idx];
+        }
+        return nullptr;
+    };
+
+
+
+    for (int webId : order) {
+        Web *w = findWebById(webId);
+        if (!w) continue;
+        if (w->reg == -2) continue;
+
+        // Collect used registers by already-assigned neighbors.
+        std::vector<bool> used(numRegisters, false);
+        auto *v = interferenceGraph.findVertex(webId);
+        if (v) {
+            for (auto *adjEdge : v->getAdj()) {
+                int neighId = adjEdge->getDest()->getInfo();
+                Web *neigh = findWebById(neighId);
+                if (!neigh) continue;
+                if (neigh->reg >= 0 && neigh->reg < numRegisters) {
+                    used[neigh->reg] = true;
+                }
+            }
+        }
+
+        int chosen = -1;
+        for (int r = 0; r < numRegisters; ++r) {
+            if (!used[r]) {
+                chosen = r;
+                break;
+            }
+        }
+
+        if (chosen == -1) {
+            // Required behavior: if allocation is impossible, everything becomes memory.
+            for (auto &ww : allWebs) {
+                ww.reg = -2;
+            }
+            return false;
+        }
+
+        w->reg = chosen;
+    }
+
+    // Sanity: any remaining unassigned => memory.
+    for (auto &w : allWebs) {
+        if (w.reg != -2 && w.reg < 0) w.reg = -2;
+    }
+
     return true;
 }
+
 
 void Solver::allocateRegisters() {
     // Section 2.1 (IR) of the assignment: in this project we directly operate on
@@ -518,6 +555,7 @@ void Solver::allocateRegisters() {
 
     buildInterferenceGraph();
 
+    // Basic algorithm: no pre-heuristics, only tryColoring().
     if (algorithm == "spilling") {
         applySpilling(kParam);
     } else if (algorithm == "splitting") {
@@ -527,8 +565,9 @@ void Solver::allocateRegisters() {
     bool success = tryColoring();
 
     if (!success) {
-        std::cout << "couldn't color the graph" << std::endl;
+        std::cout << "couldn't color the graph (falling back to memory)" << std::endl;
     }
 
     generateOutput();
 }
+
