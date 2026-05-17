@@ -76,7 +76,5 @@ Example Usage
 
 ### Expected Output
 Upon successful allocation execution, the terminal will report:
-```text
-processing ended successfully!
-```
+`processing ended successfully!` <br>
 The register mappings and optimization outcomes will then be written directly into the specified output file (e.g., allocation.txt).
