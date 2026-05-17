@@ -12,6 +12,12 @@ Solver::Solver() {
     numRegisters = 0;
 }
 
+/**
+ * @brief Retrieves the web ID for a variable or creates a new web if it does not exist.
+ *
+ * @param varName Name of the variable.
+ * @return int Unique web ID associated with the variable.
+ */
 int Solver::getOrCreateWebId(const std::string &varName) {
     auto it = varToWebId.find(varName);
     if (it != varToWebId.end()) return it->second;
@@ -26,59 +32,95 @@ int Solver::getOrCreateWebId(const std::string &varName) {
     return id;
 }
 
+/**
+ * @brief Adds a live range start line to a variable's web.
+ *
+ * @param varName Name of the variable.
+ * @param line Line where the live range starts.
+ */
 void Solver::addLiveRangeStart(std::string varName, int line) {
     int webId = getOrCreateWebId(varName);
     allWebs[webId].startLines.insert(line);
 }
 
+/**
+ * @brief Adds a live range point line to a variable's web.
+ *
+ * @param varName Name of the variable.
+ * @param line Line where the live range is alive.
+ */
 void Solver::addLiveRangePoint(std::string varName, int line) {
     int webId = getOrCreateWebId(varName);
     allWebs[webId].pointLines.insert(line);
 }
 
+/**
+ * @brief Adds a live range end line to a variable's web.
+ *
+ * @param varName Name of the variable.
+ * @param line Line where the live range ends.
+ */
 void Solver::addLiveRangeEnd(std::string varName, int line) {
     int webId = getOrCreateWebId(varName);
     allWebs[webId].endLines.insert(line);
 }
 
+/**
+ * @brief Sets the number of available registers for allocation.
+ *
+ * @param n Number of registers.
+ */
 void Solver::setNumRegisters(int n) {
     numRegisters = n;
     std::cout << "-> number of registers read (N): " << n << std::endl;
 }
 
+/**
+ * @brief Configures the register allocation algorithm and its parameter.
+ *
+ * @param alg Name of the algorithm to use.
+ * @param param Optional integer parameter for the algorithm.
+ */
 void Solver::setAlgorithm(std::string alg, int param) {
     algorithm = alg;
     kParam = param;
     std::cout << "-> algorithm read: " << alg << " with parameter " << param << std::endl;
 }
 
-void Solver::updateOutputFile(std::string path) {
-    outputFile = path;
-}
+/**
+ * @brief Updates the output file path.
+ *
+ * @param path Path to the output file.
+ */
+    void Solver::updateOutputFile(std::string path) {
+        outputFile = path;
+    }
 
+/**
+ * @brief Determines if a web is active at a given line.
+ * This function checks if the specified line is part of the web's live range by verifying if it exists in any of the web's startLines, pointLines, or endLines sets.
+ * 
+ * @param w The web to check.
+ * @param line The line number to check for activity.
+ * @return true if the web is active at the given line, false otherwise.
+ */
 static bool webContains(const Web &w, int line) {
     return w.startLines.count(line) || w.pointLines.count(line) || w.endLines.count(line);
 }
 
-static bool webInterfere(const Web &a, const Web &b) {
-    // Required behavior to avoid false interference:
-    // a conflict only exists if they share some line that is in the lifetime
-    // of both webs. In the original +/-(start/end) encoding, if one web ends
-    // at line L and the other starts at line L, that should NOT be an
-    // interference.
-    //
-    // With our split representation, we model:
-    //   active-at-L for start/end/point:
-    //     - startLines: active (present)
-    //     - pointLines: active
-    //     - endLines: treat as "no longer active at L" (so not overlapping with other's start at same L)
-    //
-    // Therefore, an overlap exists if there is a line L such that:
-    //   L is active for a AND active for b.
 
-    // Active sets for overlap:
-    //   aActive = startLines U pointLines
-    //   bActive = startLines U pointLines
+/**
+ * @brief Determines whether two webs interfere (i.e., overlap in live ranges).
+ *
+ * Two webs interfere if they share at least one program line where both are
+ * considered active. End lines are not treated as active to avoid false conflicts
+ * when one web ends exactly where another starts.
+ *
+ * @param a First web.
+ * @param b Second web.
+ * @return true if the webs interfere, false otherwise.
+ */
+static bool webInterfere(const Web &a, const Web &b) {
 
     for (int line : a.startLines) {
         if (b.startLines.count(line) || b.pointLines.count(line)) return true;
@@ -89,6 +131,14 @@ static bool webInterfere(const Web &a, const Web &b) {
     return false;
 }
 
+
+/**
+ * @brief Builds the interference graph based on live range overlaps between webs.
+ *
+ * Creates a graph where each vertex represents a web, and edges represent
+ * interference (i.e., overlapping live ranges that cannot share a register).
+ * Uses pairwise comparison of webs to detect conflicts.
+ */
 void Solver::buildInterferenceGraph() {
     std::cout << "building interference graph" << std::endl;
     interferenceGraph = Graph<int>();
@@ -108,6 +158,20 @@ void Solver::buildInterferenceGraph() {
     }
 }
 
+/**
+ * @brief Performs spilling by iteratively removing highest-degree webs.
+ *
+ * Repeatedly selects the web with the maximum interference graph degree and
+ * marks it as spilled (reg = -2), then removes it from the graph.
+ *
+ * Time Complexity:
+ * Let n = number of webs, m = number of edges in the interference graph, and k = spill iterations.
+ * Each iteration scans all webs (O(n)) and computes degree via adjacency list lookup (O(1) per vertex access,
+ * but O(deg) for size depending on representation). Overall worst-case:
+ *   O(k * (n + m))
+ *
+ * @param k Maximum number of webs to spill.
+ */
 void Solver::applySpilling(int k) {
     std::cout << "executing web spilling (max k = " << k << ")" << std::endl;
 
@@ -137,6 +201,40 @@ void Solver::applySpilling(int k) {
     }
 }
 
+/**
+ * @brief Splits high-degree webs into two new webs to reduce register pressure.
+ *
+ * Repeatedly selects a candidate web (high interference degree and sufficient live points),
+ * splits its timeline into two halves, and rebuilds interference information.
+ *
+ * Each split:
+ *  - selects max-degree web
+ *  - builds + sorts a timeline of live points
+ *  - partitions into two sets
+ *  - updates web sets and rebuilds the interference graph
+ *
+ * Time Complexity:
+ * Let:
+ *   n = number of webs
+ *   m = number of edges in interference graph
+ *   p = total number of live points per selected web (start+point+end)
+ *   k = number of splitting iterations
+ *
+ * Per iteration:
+ *   - scanning all webs: O(n)
+ *   - finding vertex degree: O(1)–O(deg) per lookup, worst-case O(m)
+ *   - building + sorting timeline: O(p log p)
+ *   - rebuilding interference graph: O(n² * cost(webInterfere))
+ *     where webInterfere depends on set lookups → O(s) average per check
+ *
+ * Overall worst-case per iteration:
+ *   O(n + m + p log p + n² · s)
+ *
+ * Total for k iterations:
+ *   O(k · (n + m + p log p + n² · s))
+ *
+ * @param k Maximum number of split operations.
+ */
 void Solver::applySplitting(int k) {
     std::cout << "executing web splitting (max k = " << k << ")" << std::endl;
 
@@ -231,6 +329,45 @@ void Solver::applySplitting(int k) {
     }
 }
 
+/**
+ * @brief Attempts greedy graph coloring for register allocation.
+ *
+ * Assigns registers to webs using a greedy strategy ordered by decreasing
+ * interference degree. If coloring fails (insufficient registers), all webs
+ * are spilled to memory.
+ *
+ * Time Complexity:
+ * Let:
+ *   n = number of webs
+ *   m = number of interference edges
+ *   R = number of registers (numRegisters)
+ *
+ * Breakdown:
+ *   - Reset phase: O(n)
+ *   - Build order list: O(n)
+ *   - Sorting by degree:
+ *       degreeOf uses adjacency size → O(1)–O(deg)
+ *       sorting cost: O(n log n)
+ *   - Coloring loop:
+ *       For each web:
+ *         * findWebById: O(n)
+ *         * inspect neighbors: O(deg)
+ *         * register scan: O(R)
+ *
+ *   Worst-case coloring step:
+ *       O(n · (n + deg + R)) ≈ O(n² + n·R + n·deg)
+ *
+ * Since Σdeg = O(m), total neighbor scanning across all vertices is O(m),
+ * but repeated lookups dominate due to linear search.
+ *
+ * Overall worst-case:
+ *   O(n² + m + n log n + n·R)
+ *
+ * Dominant term typically:
+ *   O(n²) due to repeated findWebById lookups.
+ *
+ * @return true if coloring succeeds, false if spilling is required.
+ */
 bool Solver::tryColoring() {
     // Reset all non-spilled webs.
     for (auto &w : allWebs) {
@@ -305,6 +442,19 @@ bool Solver::tryColoring() {
     return true;
 }
 
+/**
+ * @brief Writes the register allocation result to the output file.
+ *
+ * Produces a formatted report of all webs, their live ranges, assigned registers,
+ * and spilled (memory) webs. If no registers are available, all webs are emitted
+ * as memory-resident.
+ *
+ * Output format:
+ *  - Web definitions with + (start), plain (use), and - (end)
+ *  - Register count used
+ *  - Mapping of registers to webs
+ *  - Memory-resident webs (M)
+ */
 void Solver::generateOutput() {
     std::ofstream out(outputFile);
     if (!out.is_open()) {
@@ -383,6 +533,13 @@ void Solver::generateOutput() {
     }
 }
 
+/**
+ * @brief Main driver for register allocation.
+ *
+ * Builds the interference graph, applies the selected optimization strategy
+ * (none, spilling, or splitting), then attempts graph coloring. Finally
+ * generates the output file.
+ */
 void Solver::allocateRegisters() {
     buildInterferenceGraph();
 
