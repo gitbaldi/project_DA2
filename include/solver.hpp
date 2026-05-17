@@ -9,11 +9,18 @@
 #include <unordered_map>
 
 
+/**
+ * @struct Web
+ * @brief Represents a Live Range (Web) of a variable in the program.
+ * * Contains all necessary information about a variable's life cycle, including
+ * its unique identifier, name, the specific lines of code where it is active,
+ * and its assigned register or memory state.
+ */
 struct Web {
-    int id;
-    std::string varName;
-    std::set<int> lines;
-    int reg = -1; // -1: none, -2: spill (mem), 0...N: registers
+    int id;              /**< Unique identifier for the web. */
+    std::string varName; /**< Original name of the variable. */
+    std::set<int> lines; /**< Set of code lines where this web is alive/active. */
+    int reg = -1;        /**< Register assignment status (-1: unassigned, -2: spilled to memory, 0...N: physical register index). */
 };
 
 class Solver {
@@ -51,11 +58,37 @@ public:
 
     // register assignment result bookkeeping
     void assignRegistersOrSpill();
+  
+    /**
+     * @brief Builds the Interference Graph from scratch based on active live ranges.
+     * * This method resets the current interference graph, populates it with vertices
+     * representing all active webs, and performs a pairwise comparison between them.
+     * If two webs share at least one line of code, a bidirectional interference edge is
+     * created, indicating they cannot be allocated to the same physical register.
+     * * @note Time Complexity: O(W^2 * L) where W is the number of webs and L is the average number of lines per web.
+     */
+     void buildInterferenceGraph();
 
-
-    // algorithm functions
-    void buildInterferenceGraph();
+    /**
+     * @brief Applies the Web Spilling heuristic to alleviate register pressure.
+     * * This heuristic executes up to K iterations. In each iteration, it identifies the
+     * "most problematic" web (the vertex with the highest degree/most interference edges).
+     * The chosen web is marked as spilled (reg = -2) and its vertex is removed from the graph,
+     * effectively freeing up register space for the remaining webs.
+     * * @param k Maximum number of spilling iterations allowed.
+     * @see buildInterferenceGraph
+     */
     void applySpilling(int k);
+
+    /**
+     * @brief Applies the Web Splitting heuristic to break down high-degree live ranges.
+     * * This heuristic runs for up to K iterations. It searches for the web with the highest
+     * interference degree that spans at least 2 code lines. It divides its set of active lines
+     * in half, updates the original web, and generates a new independent sub-web for the second half.
+     * The interference graph is automatically reconstructed after each split to update degrees.
+     * * @param k Maximum number of splitting operations allowed.
+     * @see buildInterferenceGraph
+     */
     void applySplitting(int k);
     bool tryColoring();
 };

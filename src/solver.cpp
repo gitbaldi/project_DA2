@@ -391,6 +391,11 @@ void Solver::buildInterferenceGraph() {
     }
 }
 
+/**
+ * @details Iterates a maximum of K times. In each step, it filters out already spilled
+ * webs, finds the one currently causing the most interference in the graph, and marks it
+ * for memory storage. By removing it from the graph, the degrees of all adjacent nodes drop.
+ */
 void Solver::applySpilling(int k) {
     std::cout << "executing web spilling (max k = " << k << ")" << std::endl;
 
@@ -430,9 +435,75 @@ void Solver::applySpilling(int k) {
     }
 }
 
+/**
+ * @details Implements a passive splitting strategy. It targets the web with the maximum
+ * number of conflicts, ensuring it has a splitable size (>= 2 lines). The live range is
+ * bisected, a new Web object is pushed to the collection with an appended '_split' suffix,
+ * and a full graph reconstruction is triggered to adjust to the new topology.
+ */
 void Solver::applySplitting(int k) {
-    std::cout << "executing splitting with K = " << k << std::endl;
-    // web splitting
+    std::cout << "executing web splitting (max k = " << k << ")" << std::endl;
+
+    for (int step = 0; step < k; ++step) {
+        int maxDegree = -1;
+        int webIdToSplit = -1;
+
+        // find web with most conflicts
+        for (auto &web : allWebs) {
+            if (web.reg == -2 || web.lines.size() < 2) continue;
+
+            auto v = interferenceGraph.findVertex(web.id);
+            if (v != nullptr) {
+                int degree = v->getAdj().size();
+                if (degree > maxDegree) {
+                    maxDegree = degree;
+                    webIdToSplit = web.id;
+                }
+            }
+        }
+
+        if (webIdToSplit != -1 && maxDegree > 0) {
+            std::cout << "[Split] web " << webIdToSplit << " chosen (grau " << maxDegree << ")" << std::endl;
+
+            // find web index on the list
+            int index = -1;
+            for (size_t i = 0; i < allWebs.size(); ++i) {
+                if (allWebs[i].id == webIdToSplit) {
+                    index = i; break;
+                }
+            }
+
+            if (index != -1) {
+                Web newWeb;
+                newWeb.id = nextWebId++;
+                newWeb.varName = allWebs[index].varName + "_split";
+
+                // cut set<int> in half
+                std::set<int> firstHalf, secondHalf;
+                int count = 0;
+                int half = allWebs[index].lines.size() / 2;
+
+                for (int line : allWebs[index].lines) {
+                    if (count < half) firstHalf.insert(line);
+                    else secondHalf.insert(line);
+                    count++;
+                }
+
+                // update new web and save
+                allWebs[index].lines = firstHalf;
+                newWeb.lines = secondHalf;
+
+                allWebs.push_back(newWeb);
+
+                std::cout << "  -> cut in: web " << allWebs[index].id << " and web " << newWeb.id << std::endl;
+
+                // rebuild graph
+                buildInterferenceGraph();
+            }
+        } else {
+            break;
+        }
+    }
 }
 
 bool Solver::tryColoring() {
