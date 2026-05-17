@@ -31,6 +31,7 @@ private:
     std::string outputFile;
     std::vector<Web> allWebs;
     std::unordered_map<std::string, int> varToWebId;
+    int nextWebId = 0;
     Graph<int> interferenceGraph;
 
 

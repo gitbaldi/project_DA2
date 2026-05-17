@@ -49,7 +49,7 @@ std::string remove_aspas(const std::string &s){
 int parseRanges(std::string inputFile,Solver &solver){
     std::ifstream file(inputFile);
     if(!file.is_open()){
-        std::cerr<<"Error: was not possible to open ranges file"<<inputFile<<std::endl;
+        std::cerr<<"Error: was not possible to open ranges file "<<inputFile<<std::endl;
         return -1;
     }
     std:: string line;
@@ -99,7 +99,7 @@ int parseRanges(std::string inputFile,Solver &solver){
 int parseRegisters(std::string inputFile,Solver &solver){
     std::ifstream file(inputFile);
     if(!file.is_open()){
-        std::cerr<<"Error: was not possible to open registers file"<<inputFile<<std::endl;
+        std::cerr<<"Error: was not possible to open registers file "<<inputFile<<std::endl;
         return -1;
     }
     std:: string line;
