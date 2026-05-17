@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 #include <set>
+#include <unordered_map>
+
 
 /**
  * @struct Web
@@ -28,8 +30,10 @@ private:
     int numRegisters;
     std::string outputFile;
     std::vector<Web> allWebs;
-    int nextWebId = 0;
+    std::unordered_map<std::string, int> varToWebId;
     Graph<int> interferenceGraph;
+
+
 
 public:
     Solver(); // constructor
@@ -39,6 +43,12 @@ public:
     void addLiveRangeEnd(std::string varName, int line);
     void addLiveRangePoint(std::string varName, int line);
 
+private:
+    int getOrCreateWebId(const std::string &varName);
+
+public:
+
+
     void setNumRegisters(int n);
     void setAlgorithm(std::string alg, int param);
 
@@ -46,6 +56,9 @@ public:
     void allocateRegisters();
     void generateOutput();
 
+    // register assignment result bookkeeping
+    void assignRegistersOrSpill();
+  
     /**
      * @brief Builds the Interference Graph from scratch based on active live ranges.
      * * This method resets the current interference graph, populates it with vertices
@@ -54,7 +67,7 @@ public:
      * created, indicating they cannot be allocated to the same physical register.
      * * @note Time Complexity: O(W^2 * L) where W is the number of webs and L is the average number of lines per web.
      */
-    void buildInterferenceGraph();
+     void buildInterferenceGraph();
 
     /**
      * @brief Applies the Web Spilling heuristic to alleviate register pressure.
