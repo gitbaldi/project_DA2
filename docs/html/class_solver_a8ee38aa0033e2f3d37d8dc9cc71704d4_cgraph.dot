@@ -1,0 +1,24 @@
+digraph "Solver::allocateRegisters"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="Solver::allocateRegisters",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Main driver for register allocation."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="Solver::applySpilling",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#a73c541f257e98f9d33e6251c5911c485",tooltip="Applies the Web Spilling heuristic to alleviate register pressure."];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="Solver::applySplitting",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#aba3545b88954151dc6fad46ca21d5364",tooltip="Applies the Web Splitting heuristic to break down high-degree live ranges."];
+  Node3 -> Node4 [id="edge3_Node000003_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="Solver::buildInterference\lGraph",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#aaa43277bd2d8160c0ab8a96293dc8ba2",tooltip="Builds the Interference Graph from scratch based on active live ranges."];
+  Node4 -> Node5 [id="edge4_Node000004_Node000005",color="steelblue1",style="solid",tooltip=" "];
+  Node5 [id="Node000005",label="webInterfere",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$solver_8cpp.html#a989f44307363c92324d45d01a0c6017a",tooltip="Determines whether two webs interfere (i.e., overlap in live ranges)."];
+  Node3 -> Node6 [id="edge5_Node000003_Node000006",color="steelblue1",style="solid",tooltip=" "];
+  Node6 [id="Node000006",label="webContains",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$solver_8cpp.html#a3075e65915f97ade987cf6c8d2ea75d3",tooltip="Determines if a web is active at a given line. This function checks if the specified line is part of ..."];
+  Node1 -> Node4 [id="edge6_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node1 -> Node7 [id="edge7_Node000001_Node000007",color="steelblue1",style="solid",tooltip=" "];
+  Node7 [id="Node000007",label="Solver::generateOutput",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#aaf4728678f5ed87642345485139c4ee1",tooltip="Writes the register allocation result to the output file."];
+  Node1 -> Node8 [id="edge8_Node000001_Node000008",color="steelblue1",style="solid",tooltip=" "];
+  Node8 [id="Node000008",label="Solver::tryColoring",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#a8bfcc12b6f6bd5d14b6c9429e4a53df5",tooltip="Attempts greedy graph coloring for register allocation."];
+}

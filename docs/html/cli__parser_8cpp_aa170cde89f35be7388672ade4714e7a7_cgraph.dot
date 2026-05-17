@@ -1,0 +1,15 @@
+digraph "parseRegisters"
+{
+ // LATEX_PDF_SIZE
+  bgcolor="transparent";
+  edge [fontname=Helvetica,fontsize=10,labelfontname=Helvetica,labelfontsize=10];
+  node [fontname=Helvetica,fontsize=10,shape=box,height=0.2,width=0.4];
+  rankdir="LR";
+  Node1 [id="Node000001",label="parseRegisters",height=0.2,width=0.4,color="gray40", fillcolor="grey60", style="filled", fontcolor="black",tooltip="Parses the register configuration file."];
+  Node1 -> Node2 [id="edge1_Node000001_Node000002",color="steelblue1",style="solid",tooltip=" "];
+  Node2 [id="Node000002",label="remove_espacos",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$cli__parser_8cpp.html#a450a9b54a9af47bd9e824cfd9be93f59",tooltip="removes the unecessary whitespaces in a string"];
+  Node1 -> Node3 [id="edge2_Node000001_Node000003",color="steelblue1",style="solid",tooltip=" "];
+  Node3 [id="Node000003",label="Solver::setAlgorithm",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#a7fac77e7c687f8999ec3c45998fa7739",tooltip="Configures the register allocation algorithm and its parameter."];
+  Node1 -> Node4 [id="edge3_Node000001_Node000004",color="steelblue1",style="solid",tooltip=" "];
+  Node4 [id="Node000004",label="Solver::setNumRegisters",height=0.2,width=0.4,color="grey40", fillcolor="white", style="filled",URL="$class_solver.html#a0764159555d7a7cab73e800026bfc81b",tooltip="Sets the number of available registers for allocation."];
+}

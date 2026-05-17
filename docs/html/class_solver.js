@@ -1,0 +1,26 @@
+var class_solver =
+[
+    [ "Solver", "class_solver.html#a9dfe7ae9ce617e8a6398be34284c907a", null ],
+    [ "addLiveRangeEnd", "class_solver.html#a73dd9e259ba04f397080bce514ad2bbd", null ],
+    [ "addLiveRangePoint", "class_solver.html#af7a9c82d6c05c8c838055f3ceda6ea7c", null ],
+    [ "addLiveRangeStart", "class_solver.html#a1562d01f3988ffbbd907938c037860ed", null ],
+    [ "allocateRegisters", "class_solver.html#a8ee38aa0033e2f3d37d8dc9cc71704d4", null ],
+    [ "applySpilling", "class_solver.html#a73c541f257e98f9d33e6251c5911c485", null ],
+    [ "applySplitting", "class_solver.html#aba3545b88954151dc6fad46ca21d5364", null ],
+    [ "assignRegistersOrSpill", "class_solver.html#a674efdda47b405901c1f39d46b2f1e70", null ],
+    [ "buildInterferenceGraph", "class_solver.html#aaa43277bd2d8160c0ab8a96293dc8ba2", null ],
+    [ "generateOutput", "class_solver.html#aaf4728678f5ed87642345485139c4ee1", null ],
+    [ "getOrCreateWebId", "class_solver.html#afdb761141655a0864c0acf805588215c", null ],
+    [ "setAlgorithm", "class_solver.html#a7fac77e7c687f8999ec3c45998fa7739", null ],
+    [ "setNumRegisters", "class_solver.html#a0764159555d7a7cab73e800026bfc81b", null ],
+    [ "tryColoring", "class_solver.html#a8bfcc12b6f6bd5d14b6c9429e4a53df5", null ],
+    [ "updateOutputFile", "class_solver.html#aa71018a27ed24c621a16f6b782332c4b", null ],
+    [ "algorithm", "class_solver.html#a8024907f39a2d0bb7e4561ac61656f80", null ],
+    [ "allWebs", "class_solver.html#a4d41d183847d75d8d8e91bb9b5db8203", null ],
+    [ "interferenceGraph", "class_solver.html#ab592b89c6ed8bc1ff041801b483cf0e3", null ],
+    [ "kParam", "class_solver.html#a1396242da7268219cc2381a22f6cdd5a", null ],
+    [ "nextWebId", "class_solver.html#a6f1274eb634656eea2df86a16c457006", null ],
+    [ "numRegisters", "class_solver.html#a8302e3d1e603abfededb2b8593f080a8", null ],
+    [ "outputFile", "class_solver.html#aa932424c3fca3a1f7e7c05c628a4cbf2", null ],
+    [ "varToWebId", "class_solver.html#a8839e92db5af379a044e8553cdf46ca7", null ]
+];
