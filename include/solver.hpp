@@ -19,7 +19,13 @@
 struct Web {
     int id;              /**< Unique identifier for the web. */
     std::string varName; /**< Original name of the variable. */
-    std::set<int> lines; /**< Set of code lines where this web is alive/active. */
+
+    // Track live-range endpoints separately so we can correctly model cases where:
+    //   one web ends at line L and another starts at line L -> NO interference.
+    std::set<int> startLines;   /**< Lines where the web becomes live (+L). */
+    std::set<int> pointLines;   /**< Lines where the web is live in the middle (plain number). */
+    std::set<int> endLines;     /**< Lines where the web stops being live (-L). */
+
     int reg = -1;        /**< Register assignment status (-1: unassigned, -2: spilled to memory, 0...N: physical register index). */
 };
 
