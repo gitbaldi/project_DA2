@@ -67,7 +67,7 @@ g++ -std=c++17 main.cpp src/cli_parser.cpp src/solver.cpp -o myProg
 The program runs strictly in batch mode using the -b flag and accepts three parameters:
 
 ```text
-./myProg -b data/ranges/<ranges_file> data/registers/<registers_file> <output_file>
+./myProg -b data/ranges/<ranges_file> data/registers/<registers_file>   <output_file>
 ```
 Example Usage
 ```text

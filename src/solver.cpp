@@ -133,12 +133,13 @@ static bool webInterfere(const Web &a, const Web &b) {
 
 
 /**
- * @brief Builds the interference graph based on live range overlaps between webs.
- *
- * Creates a graph where each vertex represents a web, and edges represent
- * interference (i.e., overlapping live ranges that cannot share a register).
- * Uses pairwise comparison of webs to detect conflicts.
- */
+ * @brief Builds the Interference Graph from scratch based on active live ranges.
+ * * This method resets the current interference graph, populates it with vertices
+ * representing all active webs, and performs a pairwise comparison between them.
+ * If two webs share at least one line of code, a bidirectional interference edge is
+ * created, indicating they cannot be allocated to the same physical register.
+ * * @note Time Complexity: O(W^2 * L) where W is the number of webs and L is the average number of lines per web.
+*/
 void Solver::buildInterferenceGraph() {
     std::cout << "building interference graph" << std::endl;
     interferenceGraph = Graph<int>();
@@ -159,18 +160,34 @@ void Solver::buildInterferenceGraph() {
 }
 
 /**
- * @brief Performs spilling by iteratively removing highest-degree webs.
+ * @brief Spills high-degree webs to memory to reduce register pressure.
  *
- * Repeatedly selects the web with the maximum interference graph degree and
- * marks it as spilled (reg = -2), then removes it from the graph.
+ * Repeatedly selects a candidate web (highest interference degree),
+ * marks it for memory storage, and removes it from the graph to decrease the degree of its neighbors.
+ *
+ * Each spill:
+ * - selects max-degree web among unspilled webs
+ * - marks the chosen web as spilled (reg = -2)
+ * - removes the web's vertex from the interference graph
  *
  * Time Complexity:
- * Let n = number of webs, m = number of edges in the interference graph, and k = spill iterations.
- * Each iteration scans all webs (O(n)) and computes degree via adjacency list lookup (O(1) per vertex access,
- * but O(deg) for size depending on representation). Overall worst-case:
- *   O(k * (n + m))
+ * Let:
+ * n = number of webs (vertices)
+ * m = number of edges in interference graph
+ * k = number of spilling iterations
  *
- * @param k Maximum number of webs to spill.
+ * Per iteration:
+ * - scanning all webs: O(n)
+ * - finding vertex degree: O(1) or O(deg) per lookup, worst-case bounded by O(n)
+ * - removing vertex from graph: O(n + m) worst-case (finding the vertex, removing it, and updating all neighbors' adjacency lists)
+ *
+ * Overall worst-case per iteration:
+ * O(n + m)
+ *
+ * Total for k iterations:
+ * O(k * (n + m))
+ *
+ * @param k Maximum number of spill operations.
  */
 void Solver::applySpilling(int k) {
     std::cout << "executing web spilling (max k = " << k << ")" << std::endl;
