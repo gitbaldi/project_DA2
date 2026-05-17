@@ -541,23 +541,39 @@ void Solver::generateOutput() {
  * generates the output file.
  */
 void Solver::allocateRegisters() {
+    // 1) Always start by building the interference graph and trying plain coloring.
+    //    Only if it fails do we execute spilling/splitting.
     buildInterferenceGraph();
 
-    // Algorithm selection:
-    // - basic: only tryColoring
-    // - spilling: applySpilling then tryColoring
-    // - splitting: applySplitting then tryColoring
-    if (algorithm == "spilling") {
-        applySpilling(kParam);
-    } else if (algorithm == "splitting") {
-        applySplitting(kParam);
-    }
-
     bool success = tryColoring();
-    if (!success) {
-        std::cout << "couldn't color the graph (falling back to memory)" << std::endl;
+    if (success) {
+        generateOutput();
+        return;
     }
 
+    // 2) If plain coloring failed, iteratively apply the selected algorithm and retry.
+    //    We interpret kParam as the maximum number of algorithm attempts.
+    //    If algorithm isn't spilling/splitting, we stop (deemed impossible).
+    for (int iter = 0; iter < kParam; ++iter) {
+        // Rebuild interference graph at each attempt to ensure consistency.
+        buildInterferenceGraph();
+
+        if (algorithm == "spilling") {
+            applySpilling(1);
+        } else if (algorithm == "splitting") {
+            applySplitting(1);
+        } else {
+            break;
+        }
+
+        success = tryColoring();
+        if (success) {
+            generateOutput();
+            return;
+        }
+    }
+
+    // 3) Still not possible after attempts -> generate output with memory-spilling state.
     generateOutput();
 }
 
